@@ -2,5 +2,5 @@
 
 auto main() -> int
 {
-    sndmsg("Hello, World!", 8081);
+    sndmsg(const_cast<char *>("Hello, World!"), 8081);
 }
