@@ -1,6 +1,8 @@
-#include <client.h>
+#include <macrosafe/client.hpp>
+
+#include <cassert>
 
 auto main() -> int
 {
-    sndmsg(const_cast<char *>("Hello, World!"), 8081);
+    assert(macrosafe::send_message("Hello, world!") == macrosafe::SendResult::Success);
 }

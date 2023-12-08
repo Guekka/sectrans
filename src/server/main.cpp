@@ -1,11 +1,19 @@
-#include <server.h>
+#include <macrosafe/common.hpp>
+#include <macrosafe/server.hpp>
 
 #include <iostream>
 
 auto main() -> int
 {
-    startserver(8081);
-    char msg_read[1024];
-    getmsg(msg_read);
-    std::cout << msg_read << std::endl;
+    const macrosafe::Server server;
+    std::cout << "Server started on port " << macrosafe::k_port << '\n' << std::flush;
+
+    if (const auto message = server.receive_message_blocking(); message.has_value())
+    {
+        std::cout << "Received message: " << *message << '\n' << std::flush;
+    }
+    else
+    {
+        std::cout << "Failed to receive message\n" << std::flush;
+    }
 }
