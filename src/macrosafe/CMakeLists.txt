@@ -8,6 +8,8 @@ set(SOURCES
         ${INCLUDE_DIR}/macrosafe/server.hpp
         ${SOURCE_DIR}/client.cpp
         ${SOURCE_DIR}/server.cpp
+        ../../include/macrosafe/message.hpp
+        message.cpp
 )
 
 add_library(macrosafe STATIC ${SOURCES})
