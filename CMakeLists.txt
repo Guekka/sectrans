@@ -12,3 +12,4 @@ include(cmake/cpp_warnings.cmake)
 
 add_subdirectory(external/macrohard)
 add_subdirectory(src)
+add_subdirectory(tests)
