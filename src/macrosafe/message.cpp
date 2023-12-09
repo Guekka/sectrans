@@ -40,4 +40,8 @@ auto Message::get_body() const -> std::string_view
 {
     return body_;
 }
+auto Message::get_header() const -> Header
+{
+    return header_;
+}
 } // namespace macrosafe::detail
