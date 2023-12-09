@@ -1,0 +1,125 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "cmake-dev",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        }
+      },
+      "warnings": {
+        "deprecated": true,
+        "dev": true
+      },
+      "errors": {
+        "deprecated": true
+      }
+    },
+    {
+      "name": "vcpkg",
+      "hidden": true,
+      "toolchainFile": "$env{VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_OVERLAY_PORTS": {
+          "type": "STRING",
+          "value": "${sourceDir}/cmake/ports"
+        }
+      }
+    },
+    {
+      "name": "windows",
+      "hidden": true,
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": {
+          "type": "STRING",
+          "value": "x64-windows-static"
+        }
+      }
+    },
+    {
+      "name": "linux",
+      "hidden": true,
+      "generator": "Ninja",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": {
+          "type": "STRING",
+          "value": "x64-linux"
+        }
+      }
+    },
+    {
+      "name": "gcc",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": {
+          "type": "STRING",
+          "value": "-fno-sanitize-recover=undefined -fsanitize=address,undefined -pedantic -pedantic-errors -Wall -Werror -Wextra --coverage -Wall -Wextra -pedantic -Wcast-align -Wcast-qual -Wconversion -Wformat=2 -Wnon-virtual-dtor -Wold-style-cast -Woverloaded-virtual -Wsign-conversion -Wshadow -Wswitch-enum -Wundef -Wunused"
+        },
+        "CMAKE_EXE_LINKER_FLAGS": {
+          "type": "STRING",
+          "value": "-fno-sanitize-recover=undefined -fsanitize=address,undefined --coverage"
+        },
+        "CMAKE_EXPORT_COMPILE_COMMANDS": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "msvc",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": {
+          "type": "string",
+          "value": "/EHsc /MP /W4 /WX /external:anglebrackets /external:W0 /permissive- /W4 /w14062 /w14242 /w14254 /w14263 /w14265 /w14287 /w14289 /w14296 /w14311 /w14545 /w14546 /w14547 /w14549 /w14555 /w14619 /w14640 /w14826 /w14905 /w14906 /w14928"
+        },
+        "CMAKE_EXE_LINKER_FLAGS_RELEASE": {
+          "type": "STRING",
+          "value": "/DEBUG:FASTLINK"
+        },
+        "CMAKE_MSVC_RUNTIME_LIBRARY": {
+          "type": "STRING",
+          "value": "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+        }
+      }
+    },
+    {
+      "name": "windows-msvc",
+      "inherits": [
+        "cmake-dev",
+        "msvc",
+        "windows"
+      ]
+    },
+    {
+      "name": "windows-msvc-vcpkg",
+      "inherits": [
+        "cmake-dev",
+        "msvc",
+        "vcpkg",
+        "windows"
+      ]
+    },
+    {
+      "name": "linux-gcc",
+      "inherits": [
+        "cmake-dev",
+        "gcc",
+        "linux"
+      ]
+    },
+    {
+      "name": "linux-gcc-vcpkg",
+      "inherits": [
+        "cmake-dev",
+        "gcc",
+        "linux",
+        "vcpkg"
+      ]
+    }
+  ]
+}
