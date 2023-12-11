@@ -1,12 +1,9 @@
-#include <macrosafe/common.hpp>
-#include <macrosafe/message.hpp>
-#include <macrosafe/server.hpp>
+#include <macrosafe/detail/common.hpp>
+#include <macrosafe/detail/message.hpp>
+#include <macrosafe/detail/server.hpp>
 #include <server.h>
 
-#include <cassert>
-#include <cstddef>
-
-namespace macrosafe {
+namespace macrosafe::detail {
 Server::Server()
 {
     startserver(k_port);
@@ -51,4 +48,4 @@ auto Server::receive_message_blocking() const -> std::optional<std::string>
     return std::string(final_message.get_body());
 }
 
-} // namespace macrosafe
+} // namespace macrosafe::detail

@@ -1,11 +1,9 @@
 #include <client.h>
-#include <macrosafe/client.hpp>
-#include <macrosafe/common.hpp>
-#include <macrosafe/message.hpp>
+#include <macrosafe/detail/client.hpp>
+#include <macrosafe/detail/common.hpp>
+#include <macrosafe/detail/message.hpp>
 
-#include <cstddef>
-
-namespace macrosafe {
+namespace macrosafe::detail {
 
 auto send_raw_message(std::string message) -> SendResult
 {
@@ -38,8 +36,8 @@ auto send_message(const detail::Message &message) -> SendResult
     return SendResult::Success;
 }
 
-auto send_message(std::string_view message) -> macrosafe::SendResult
+auto send_message(std::string_view message) -> SendResult
 {
     return send_message(detail::Message::from_body(message));
 }
-} // namespace macrosafe
+} // namespace macrosafe::detail

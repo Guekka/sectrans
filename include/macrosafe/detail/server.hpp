@@ -3,7 +3,7 @@
 #include <optional>
 #include <string>
 
-namespace macrosafe {
+namespace macrosafe::detail {
 class Server
 {
 public:
@@ -12,4 +12,4 @@ public:
 
     [[nodiscard]] auto receive_message_blocking() const -> std::optional<std::string>;
 };
-} // namespace macrosafe
+} // namespace macrosafe::detail

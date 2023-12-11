@@ -1,16 +1,12 @@
-#include <macrosafe/common.hpp>
-#include <macrosafe/server.hpp>
+#include <macrosafe/channel.hpp>
 
 #include <iostream>
 
 auto main() -> int
 {
-    const macrosafe::Server server;
-    std::cout << "Server started on port " << macrosafe::k_port << '\n' << std::flush;
-
-    if (const auto message = server.receive_message_blocking(); message.has_value())
+    if (auto message = macrosafe::Channel::receive_message().get(); message)
     {
-        std::cout << "Received message: " << *message << '\n' << std::flush;
+        std::cout << "Received message: " << message.value() << '\n' << std::flush;
     }
     else
     {

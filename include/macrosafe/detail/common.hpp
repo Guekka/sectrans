@@ -2,6 +2,6 @@
 
 #include <string>
 
-namespace macrosafe {
+namespace macrosafe::detail {
 constexpr auto k_port = 42429; // TODO: think about making this configurable
-} // namespace macrosafe
+} // namespace macrosafe::detail

@@ -1,8 +1,8 @@
-#include <macrosafe/client.hpp>
+#include <macrosafe/channel.hpp>
 
 #include <cassert>
 
 auto main() -> int
 {
-    assert(macrosafe::send_message("Hello, world!") == macrosafe::SendResult::Success);
+    assert(macrosafe::Channel::send_message("Hello, world!") == macrosafe::SendResult::Success);
 }

@@ -1,4 +1,4 @@
-#include <macrosafe/message.hpp>
+#include <macrosafe/detail/message.hpp>
 
 #include <stdexcept>
 
