@@ -6,9 +6,13 @@ set(SOURCES
         ${INCLUDE_DIR}/macrosafe/client.hpp
         ${INCLUDE_DIR}/macrosafe/common.hpp
         ${INCLUDE_DIR}/macrosafe/server.hpp
+        ${INCLUDE_DIR}/macrosafe/message.hpp
+
+        ${INCLUDE_DIR}/macrosafe/utils/metaprogramming.hpp
+        ${INCLUDE_DIR}/macrosafe/utils/threading.hpp
+
         ${SOURCE_DIR}/client.cpp
         ${SOURCE_DIR}/server.cpp
-        ../../include/macrosafe/message.hpp
         message.cpp
 )
 
