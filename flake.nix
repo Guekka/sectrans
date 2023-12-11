@@ -16,8 +16,7 @@
       inherit inputs pkgs;
       modules = [
         ({pkgs, ...}: {
-          languages.cplusplus.enable = true;
-          packages = with pkgs; [cmake ninja];
+          packages = [pkgs.cmake pkgs.ninja pkgs.gcc pkgs.libgccjit];
         })
       ];
     };

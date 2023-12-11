@@ -8,4 +8,3 @@ set(SOURCES
 
 add_executable(${PROJECT_NAME}_client ${SOURCES})
 target_link_libraries(${PROJECT_NAME}_client PRIVATE macrosafe)
-target_compile_options(${PROJECT_NAME}_client PRIVATE ${PROJECT_WARNING_FLAGS})

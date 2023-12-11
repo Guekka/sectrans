@@ -1,6 +1,10 @@
 #include <macrosafe/common.hpp>
+#include <macrosafe/message.hpp>
 #include <macrosafe/server.hpp>
 #include <server.h>
+
+#include <cassert>
+#include <cstddef>
 
 namespace macrosafe {
 Server::Server()
@@ -13,11 +17,38 @@ Server::~Server()
     stopserver();
 }
 
+auto parse_message(const std::string &message) -> detail::Message
+{
+    return detail::Message::from_raw(message);
+}
+
 auto Server::receive_message_blocking() const -> std::optional<std::string>
 {
     std::string buffer(1024, '\0');
     // TODO: make sure that the C API returns 0 on success
-    const int res = getmsg(buffer.data());
-    return res == 0 ? std::optional(std::move(buffer)) : std::nullopt;
+    int res = getmsg(buffer.data());
+    if (res != 0)
+        return std::nullopt;
+
+    const auto message = parse_message(buffer);
+
+    if (message.get_header().length > message.get_body().size())
+    {
+        const auto remaining_parts = message.get_header().length / detail::Message::k_max_length;
+
+        for (size_t i = 0; i < remaining_parts; ++i) // we already received the first part
+        {
+            std::string part(1024, '\0');
+            res = getmsg(part.data());
+            if (res != 0)
+                return std::nullopt;
+
+            buffer += part;
+        }
+    }
+
+    auto final_message = parse_message(buffer);
+    return std::string(final_message.get_body());
 }
+
 } // namespace macrosafe
