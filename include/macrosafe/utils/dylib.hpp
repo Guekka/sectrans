@@ -56,7 +56,7 @@ class DyLib
 
 public:
     DyLib()
-        : handle_(dlopen(lib_name.chars, RTLD_LAZY))
+        : handle_(dlmopen(LM_ID_NEWLM, lib_name.chars, RTLD_LAZY))
     {
         if (handle_ == nullptr)
             throw DyLibError(get_dlerror(), DyLibError::ErrorType::Open);
