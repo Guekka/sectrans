@@ -1,5 +1,8 @@
 #pragma once
 
+#include <macrosafe/detail/message.hpp>
+#include <macrosafe/utils/dylib.hpp>
+
 #include <string_view>
 
 namespace macrosafe {
@@ -11,8 +14,18 @@ enum class SendResult
 };
 
 namespace detail {
+constexpr auto k_send_message_func = DyLibFunction<FixedString{"sndmsg"}, int (*)(const char *, uint16_t)>{};
 
-[[nodiscard]] auto send_message(std::string_view message) -> SendResult;
+class Client
+{
+    DyLib<FixedString{"libclient.so"}> lib_;
 
-}
+    [[nodiscard]] auto send_raw_message(std::string message) -> SendResult;
+    [[nodiscard]] auto send_message(const Message &message) -> SendResult;
+
+public:
+    [[nodiscard]] auto send_message(std::string_view message) -> SendResult;
+};
+
+} // namespace detail
 } // namespace macrosafe

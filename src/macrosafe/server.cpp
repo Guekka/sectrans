@@ -1,17 +1,27 @@
 #include <macrosafe/detail/common.hpp>
 #include <macrosafe/detail/message.hpp>
 #include <macrosafe/detail/server.hpp>
-#include <server.h>
 
 namespace macrosafe::detail {
 Server::Server()
 {
-    startserver(k_port);
+    lib_.execute<k_start_server_func>(k_port);
 }
 
 Server::~Server()
 {
-    stopserver();
+    lib_.execute<k_stop_server_func>();
+}
+
+auto Server::get_message_raw() const -> std::optional<std::string>
+{
+    std::string buffer(1024, '\0');
+    const auto res = lib_.execute<k_receive_message_func>(buffer.data());
+    // TODO: make sure that the C API returns 0 on success
+    if (res != 0)
+        return std::nullopt;
+
+    return buffer;
 }
 
 auto parse_message(const std::string &message) -> detail::Message
@@ -21,13 +31,12 @@ auto parse_message(const std::string &message) -> detail::Message
 
 auto Server::receive_message_blocking() const -> std::optional<std::string>
 {
-    std::string buffer(1024, '\0');
-    // TODO: make sure that the C API returns 0 on success
-    int res = getmsg(buffer.data());
-    if (res != 0)
+    auto raw = get_message_raw();
+
+    if (!raw)
         return std::nullopt;
 
-    const auto message = parse_message(buffer);
+    const auto message = parse_message(raw.value());
 
     if (message.get_header().length > message.get_body().size())
     {
@@ -35,16 +44,15 @@ auto Server::receive_message_blocking() const -> std::optional<std::string>
 
         for (size_t i = 0; i < remaining_parts; ++i) // we already received the first part
         {
-            std::string part(1024, '\0');
-            res = getmsg(part.data());
-            if (res != 0)
+            auto part = get_message_raw();
+            if (!part)
                 return std::nullopt;
 
-            buffer += part;
+            raw.value() += part.value();
         }
     }
 
-    auto final_message = parse_message(buffer);
+    auto final_message = parse_message(raw.value());
     return std::string(final_message.get_body());
 }
 
