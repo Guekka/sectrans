@@ -3,14 +3,18 @@
 #include <macrosafe/detail/server.hpp>
 
 namespace macrosafe::detail {
-Server::Server()
+Server::Server(uint16_t port)
 {
-    lib_.execute<k_start_server_func>(k_port);
+    const int res = lib_.execute<k_start_server_func>(port);
+    if (res != 0)
+        throw std::runtime_error{"Failed to start server"};
 }
 
 Server::~Server()
 {
-    lib_.execute<k_stop_server_func>();
+    const int res = lib_.execute<k_stop_server_func>();
+    if (res != 0)
+        std::cerr << "Failed to stop server" << std::endl; // TODO: another way to handle this?
 }
 
 auto Server::get_message_raw() const -> std::optional<std::string>

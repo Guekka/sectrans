@@ -19,12 +19,14 @@ constexpr auto k_send_message_func = DyLibFunction<FixedString{"sndmsg"}, int (*
 class Client
 {
     DyLib<FixedString{"libclient.so"}> lib_;
+    uint16_t port_;
 
     [[nodiscard]] auto send_raw_message(std::string message) -> SendResult;
     [[nodiscard]] auto send_message(const Message &message) -> SendResult;
 
 public:
     [[nodiscard]] auto send_message(std::string_view message) -> SendResult;
+    Client(uint16_t port);
 };
 
 } // namespace detail

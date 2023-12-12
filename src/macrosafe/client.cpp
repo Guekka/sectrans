@@ -5,6 +5,11 @@
 
 namespace macrosafe::detail {
 
+Client::Client(uint16_t port)
+    : port_{port}
+{
+}
+
 auto Client::send_raw_message(std::string message) -> SendResult
 {
     if (message.size() > detail::Message::k_max_length)
@@ -14,8 +19,8 @@ auto Client::send_raw_message(std::string message) -> SendResult
 
     // TODO: check if we need a null terminator
     // TODO: check what the return value means
-    return lib_.execute<k_send_message_func>(message.data(), k_port) == 0 ? SendResult::Success
-                                                                          : SendResult::Failure;
+    return lib_.execute<k_send_message_func>(message.data(), port_) == 0 ? SendResult::Success
+                                                                         : SendResult::Failure;
 }
 
 auto Client::send_message(const detail::Message &message) -> SendResult

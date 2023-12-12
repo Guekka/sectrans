@@ -17,6 +17,9 @@
       modules = [
         ({pkgs, ...}: {
           packages = [pkgs.cmake pkgs.ninja pkgs.gcc pkgs.libgccjit];
+          enterShell = ''
+            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/external/macrohard/client:$(pwd)/external/macrohard/server
+            '';
         })
       ];
     };
