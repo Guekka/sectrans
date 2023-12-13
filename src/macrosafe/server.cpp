@@ -28,36 +28,36 @@ auto Server::get_message_raw() const -> std::optional<std::string>
     return buffer;
 }
 
-auto parse_message(const std::string &message) -> detail::Message
-{
-    return detail::Message::from_raw(message);
-}
-
 auto Server::receive_message_blocking() const -> std::optional<std::string>
 {
-    auto raw = get_message_raw();
+    auto raw_header = get_message_raw();
 
-    if (!raw)
+    if (!raw_header)
         return std::nullopt;
 
-    const auto message = parse_message(raw.value());
+    auto header = HeaderMessage::try_from_raw(raw_header.value());
+    if (!header)
+        return std::nullopt;
 
-    if (message.get_header().length > message.get_body().size())
+    std::string resulting_message;
+    for (size_t i = 0; i < header.value().part_count(); ++i)
     {
-        const auto remaining_parts = message.get_header().length / detail::Message::k_max_length;
+        auto part = get_message_raw();
+        if (!part)
+            return std::nullopt;
 
-        for (size_t i = 0; i < remaining_parts; ++i) // we already received the first part
-        {
-            auto part = get_message_raw();
-            if (!part)
-                return std::nullopt;
+        auto data = DataMessage::try_from_raw(part.value());
+        if (!data)
+            return std::nullopt;
 
-            raw.value() += part.value();
-        }
+        resulting_message += data.value().data();
     }
 
-    auto final_message = parse_message(raw.value());
-    return std::string(final_message.get_body());
+    if (resulting_message.size() < header.value().size())
+        return std::nullopt;
+
+    resulting_message.resize(header.value().size());
+    return resulting_message;
 }
 
 } // namespace macrosafe::detail

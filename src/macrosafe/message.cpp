@@ -2,46 +2,57 @@
 
 #include <stdexcept>
 
-constexpr std::string_view k_header_separator = "|";
-
 namespace macrosafe::detail {
-auto Message::from_raw(std::string_view raw) -> Message
+
+static inline const std::string k_header_message_inline_separator = ";";
+
+HeaderMessage::HeaderMessage(size_t size, size_t part_count)
+    : size_{size}
+    , part_count_{part_count}
 {
-    auto message         = Message{};
-    auto separator_index = raw.find(k_header_separator);
-    if (separator_index == std::string_view::npos)
+}
+
+auto HeaderMessage::to_raw_impl() const -> std::string
+{
+    return std::to_string(size_) + k_header_message_inline_separator + std::to_string(part_count_);
+}
+
+auto HeaderMessage::try_from_raw_impl(std::string_view raw) -> std::optional<HeaderMessage>
+{
+    try
     {
-        // TODO: think about making this a custom exception
-        throw std::runtime_error("Invalid message format");
+        auto separator_index = raw.find(k_header_message_inline_separator);
+        if (separator_index == std::string_view::npos)
+            return std::nullopt;
+
+        auto size_str       = raw.substr(0, separator_index);
+        auto part_count_str = raw.substr(separator_index + 1);
+
+        auto size       = std::stoull(std::string(size_str));
+        auto part_count = std::stoull(std::string(part_count_str));
+
+        return std::optional{HeaderMessage{size, part_count}};
     }
-    auto header_length     = raw.substr(0, separator_index);
-    message.header_.length = std::stoul(std::string(header_length));
-
-    const auto body_length = std::min(message.header_.length, raw.size() - separator_index - 1);
-    message.body_          = raw.substr(separator_index + 1, body_length);
-
-    return message;
+    catch (const std::exception &)
+    {
+        return std::nullopt;
+    }
 }
 
-auto Message::from_body(std::string_view body) -> Message
+DataMessage::DataMessage(std::string data)
+    : data_{std::move(data)}
 {
-    auto message           = Message{};
-    message.body_          = body;
-    message.header_.length = body.size();
-    return message;
 }
 
-auto Message::to_raw() const -> std::string
+auto DataMessage::to_raw_impl() const -> std::string
 {
-    return std::to_string(header_.length) + std::string(k_header_separator) + std::string(body_);
+    return data_;
 }
 
-auto Message::get_body() const -> std::string_view
+auto DataMessage::try_from_raw_impl(std::string_view raw) -> std::optional<DataMessage>
 {
-    return body_;
+    auto payload = raw.substr(0, k_max_data_length);
+    return std::optional{DataMessage{std::string(payload)}};
 }
-auto Message::get_header() const -> Header
-{
-    return header_;
-}
+
 } // namespace macrosafe::detail

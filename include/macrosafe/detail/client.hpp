@@ -3,6 +3,7 @@
 #include <macrosafe/detail/message.hpp>
 #include <macrosafe/utils/dylib.hpp>
 
+#include <cassert>
 #include <string_view>
 
 namespace macrosafe {
@@ -22,7 +23,12 @@ class Client
     uint16_t port_;
 
     [[nodiscard]] auto send_raw_message(std::string message) -> SendResult;
-    [[nodiscard]] auto send_message(const Message &message) -> SendResult;
+
+    template<class Derived>
+    [[nodiscard]] auto send_message(const detail::MessageBase<Derived> &message) -> SendResult
+    {
+        return send_raw_message(message.to_raw());
+    }
 
 public:
     [[nodiscard]] auto send_message(std::string_view message) -> SendResult;
