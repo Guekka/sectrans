@@ -15,12 +15,12 @@ class Server
 {
     DyLib<FixedString{"libserver.so"}> lib_;
 
-    [[nodiscard]] auto get_message_raw() const -> std::optional<std::string>;
+    [[nodiscard]] auto get_message_raw() const -> std::optional<std::vector<std::byte>>;
 
 public:
     Server(uint16_t i);
     ~Server();
 
-    [[nodiscard]] auto receive_message_blocking() const -> std::optional<std::string>;
+    [[nodiscard]] auto receive_message_blocking() const -> std::optional<std::vector<std::byte>>;
 };
 } // namespace macrosafe::detail

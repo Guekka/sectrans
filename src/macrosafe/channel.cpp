@@ -8,19 +8,19 @@ Channel::Channel(uint16_t server_port, uint16_t client_port)
 {
 }
 
-auto Channel::receive_message() -> std::future<std::optional<std::string>>
+auto Channel::receive_message() -> std::future<std::optional<std::vector<std::byte>>>
 {
     return std::async(std::launch::async, [this]() { return receive_message_blocking(); });
 }
 
-auto Channel::receive_message_blocking() -> std::optional<std::string>
+auto Channel::receive_message_blocking() -> std::optional<std::vector<std::byte>>
 {
     return server_.receive_message_blocking();
 }
 
-auto Channel::send_message(std::string_view message) -> SendResult
+auto Channel::send_message(std::vector<std::byte> message) -> SendResult
 {
-    return client_.send_message(message);
+    return client_.send_message(std::move(message));
 }
 
 } // namespace macrosafe
