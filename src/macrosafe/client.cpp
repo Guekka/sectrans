@@ -10,39 +10,48 @@ Client::Client(uint16_t port)
 {
 }
 
-auto Client::send_raw_message(std::string message) -> SendResult
+auto Client::send_raw_message(std::vector<std::byte> message) -> SendResult
 {
     if (message.size() > detail::k_max_message_length)
         return SendResult::Failure;
 
-    // TODO: check if we need a null terminator
-    // TODO: check what the return value means
-    return lib_.execute<k_send_message_func>(message.data(), port_) == 0 ? SendResult::Success
-                                                                         : SendResult::Failure;
+    // NOTE: there is no need to null-terminate the message, the C code does it for us
+    const char *as_char = std::launder(reinterpret_cast<char *>(message.data()));
+    return lib_.execute<k_send_message_func>(as_char, port_) == 0 ? SendResult::Success : SendResult::Failure;
 }
 
-auto Client::send_message(std::string_view message) -> SendResult
+auto Client::send_message(std::vector<std::byte> message) -> SendResult
 {
-    const auto part_count = message.size() / detail::DataMessage::k_max_data_length
-                            + (message.size() % detail::DataMessage::k_max_data_length != 0 ? 1 : 0);
-
-    // first send the header
-    const auto header = detail::HeaderMessage{message.size(), part_count};
-    if (auto result = send_message(header); result != SendResult::Success)
-        return result;
+    const size_t computed_part_count = message.size() / k_max_data_length
+                                       + (message.size() % k_max_data_length != 0 ? 1 : 0);
+    const size_t part_count = std::max(computed_part_count, static_cast<size_t>(1)); // allow empty messages
 
     // TODO: do not saturate the queue if the messages are not being consumed
     for (size_t i = 0; i < part_count; ++i)
     {
-        auto part = message.substr(static_cast<std::string::size_type>(i)
-                                       * detail::DataMessage::k_max_data_length,
-                                   detail::DataMessage::k_max_data_length);
+        auto part = std::vector<std::byte>{};
+        part.insert(part.end(),
+                    message.begin() + static_cast<int64_t>(i * k_max_data_length),
+                    message.begin()
+                        + static_cast<int64_t>(std::min((i + 1) * k_max_data_length, message.size())));
 
-        if (auto result = send_message(detail::DataMessage{std::string(part)}); result != SendResult::Success)
+        const auto header = Header{
+            .total_size = message.size(),
+            .part_size  = static_cast<uint16_t>(part.size()),
+            .part_count = static_cast<uint16_t>(part_count),
+            .part_index = static_cast<uint16_t>(i),
+        };
+
+        const auto result = send_raw_message(MessagePart{header, part}.to_raw());
+        if (result != SendResult::Success)
             return result;
     }
-
     return SendResult::Success;
+}
+
+auto Client::send_message(const MessagePart &message) -> SendResult
+{
+    return send_raw_message(message.to_raw());
 }
 
 } // namespace macrosafe::detail

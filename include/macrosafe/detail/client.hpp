@@ -22,16 +22,12 @@ class Client
     DyLib<FixedString{"libclient.so"}> lib_;
     uint16_t port_;
 
-    [[nodiscard]] auto send_raw_message(std::string message) -> SendResult;
+    [[nodiscard]] auto send_raw_message(std::vector<std::byte> message) -> SendResult;
 
-    template<class Derived>
-    [[nodiscard]] auto send_message(const detail::MessageBase<Derived> &message) -> SendResult
-    {
-        return send_raw_message(message.to_raw());
-    }
+    [[nodiscard]] auto send_message(const detail::MessagePart &message) -> SendResult;
 
 public:
-    [[nodiscard]] auto send_message(std::string_view message) -> SendResult;
+    [[nodiscard]] auto send_message(std::vector<std::byte> message) -> SendResult;
     Client(uint16_t port);
 };
 

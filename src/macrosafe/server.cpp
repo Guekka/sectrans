@@ -17,10 +17,11 @@ Server::~Server()
         std::cerr << "Failed to stop server" << std::endl; // TODO: another way to handle this?
 }
 
-auto Server::get_message_raw() const -> std::optional<std::string>
+auto Server::get_message_raw() const -> std::optional<std::vector<std::byte>>
 {
-    std::string buffer(1024, '\0');
-    const auto res = lib_.execute<k_receive_message_func>(buffer.data());
+    std::vector<std::byte> buffer(k_max_message_length);
+    char *as_char  = std::launder(reinterpret_cast<char *>(buffer.data()));
+    const auto res = lib_.execute<k_receive_message_func>(as_char);
     // TODO: make sure that the C API returns 0 on success
     if (res != 0)
         return std::nullopt;
@@ -28,35 +29,46 @@ auto Server::get_message_raw() const -> std::optional<std::string>
     return buffer;
 }
 
-auto Server::receive_message_blocking() const -> std::optional<std::string>
+auto Server::receive_message_blocking() const -> std::optional<std::vector<std::byte>>
 {
-    auto raw_header = get_message_raw();
-
-    if (!raw_header)
+    auto raw = get_message_raw();
+    if (!raw)
         return std::nullopt;
 
-    auto header = HeaderMessage::try_from_raw(raw_header.value());
-    if (!header)
+    auto message = MessagePart::try_from_raw(raw.value());
+    if (!message)
         return std::nullopt;
 
-    std::string resulting_message;
-    for (size_t i = 0; i < header.value().part_count(); ++i)
+    if (message.value().header().part_index != 0)
+        return std::nullopt;
+
+    std::vector<std::byte> resulting_message;
+    resulting_message.reserve(message.value().header().total_size);
+    resulting_message.insert(resulting_message.end(),
+                             message.value().payload().begin(),
+                             message.value().payload().end());
+
+    for (size_t i = 1; i < message.value().header().part_count; ++i)
     {
         auto part = get_message_raw();
         if (!part)
             return std::nullopt;
 
-        auto data = DataMessage::try_from_raw(part.value());
-        if (!data)
+        auto parsed_part = MessagePart::try_from_raw(part.value());
+        if (!parsed_part)
             return std::nullopt;
 
-        resulting_message += data.value().data();
+        if (parsed_part.value().header().part_index != i)
+            return std::nullopt;
+
+        resulting_message.insert(resulting_message.end(),
+                                 parsed_part.value().payload().begin(),
+                                 parsed_part.value().payload().end());
     }
 
-    if (resulting_message.size() < header.value().size())
+    if (resulting_message.size() != message.value().header().total_size)
         return std::nullopt;
 
-    resulting_message.resize(header.value().size());
     return resulting_message;
 }
 

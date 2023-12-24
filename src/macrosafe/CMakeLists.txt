@@ -11,6 +11,7 @@ set(SOURCES
         ${INCLUDE_DIR}/macrosafe/channel.hpp
 
         ${INCLUDE_DIR}/macrosafe/utils/metaprogramming.hpp
+        ${INCLUDE_DIR}/macrosafe/utils/serde.hpp
         ${INCLUDE_DIR}/macrosafe/utils/threading.hpp
 
         ${SOURCE_DIR}/client.cpp
