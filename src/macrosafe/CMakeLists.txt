@@ -3,13 +3,21 @@ set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(INCLUDE_DIR ${ROOT_DIR}/include)
 
 set(SOURCES
-        ${INCLUDE_DIR}/macrosafe/client.hpp
-        ${INCLUDE_DIR}/macrosafe/common.hpp
-        ${INCLUDE_DIR}/macrosafe/server.hpp
+        ${INCLUDE_DIR}/macrosafe/detail/client.hpp
+        ${INCLUDE_DIR}/macrosafe/detail/common.hpp
+        ${INCLUDE_DIR}/macrosafe/detail/server.hpp
+        ${INCLUDE_DIR}/macrosafe/detail/message.hpp
+
+        ${INCLUDE_DIR}/macrosafe/channel.hpp
+
+        ${INCLUDE_DIR}/macrosafe/utils/metaprogramming.hpp
+        ${INCLUDE_DIR}/macrosafe/utils/serde.hpp
+        ${INCLUDE_DIR}/macrosafe/utils/threading.hpp
+
         ${SOURCE_DIR}/client.cpp
         ${SOURCE_DIR}/server.cpp
-        ../../include/macrosafe/message.hpp
-        message.cpp
+        ${SOURCE_DIR}/message.cpp
+        ${SOURCE_DIR}/channel.cpp
 )
 
 add_library(macrosafe STATIC ${SOURCES})
