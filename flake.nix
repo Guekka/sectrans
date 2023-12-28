@@ -16,7 +16,7 @@
       inherit inputs pkgs;
       modules = [
         ({pkgs, ...}: {
-          packages = [pkgs.cmake pkgs.ninja pkgs.gcc pkgs.libgccjit];
+          packages = [pkgs.cmake pkgs.ninja pkgs.gcc pkgs.libgccjit pkgs.linuxPackages_latest.perf];
           enterShell = ''
             export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/external/macrohard/client:$(pwd)/external/macrohard/server
             '';

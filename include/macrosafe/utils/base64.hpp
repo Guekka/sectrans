@@ -24,8 +24,9 @@ inline auto encode_into(InputIterator begin, InputIterator end) -> OutputBuffer
     size_t counter      = 0;
     uint32_t bit_stream = 0;
     size_t offset       = 0;
+    size_t index        = 0;
     OutputBuffer encoded;
-    encoded.reserve(static_cast<size_t>(1.5 * static_cast<double>(std::distance(begin, end))));
+    encoded.resize(1.5 * std::distance(begin, end));
     while (begin != end)
     {
         auto const num_val = static_cast<unsigned char>(*begin);
@@ -33,32 +34,33 @@ inline auto encode_into(InputIterator begin, InputIterator end) -> OutputBuffer
         bit_stream += static_cast<uint32_t>(num_val << offset);
         if (offset == 16)
         {
-            encoded.push_back(static_cast<const std::byte>(base64_chars[bit_stream >> 18 & 0x3f]));
+            encoded[index++] = static_cast<const std::byte>(base64_chars[bit_stream >> 18 & 0x3f]);
         }
         if (offset == 8)
         {
-            encoded.push_back(static_cast<const std::byte>(base64_chars[bit_stream >> 12 & 0x3f]));
+            encoded[index++] = static_cast<const std::byte>(base64_chars[bit_stream >> 12 & 0x3f]);
         }
         if (offset == 0 && counter != 3)
         {
-            encoded.push_back(static_cast<const std::byte>(base64_chars[bit_stream >> 6 & 0x3f]));
-            encoded.push_back(static_cast<const std::byte>(base64_chars[bit_stream & 0x3f]));
-            bit_stream = 0;
+            encoded[index++] = static_cast<const std::byte>(base64_chars[bit_stream >> 6 & 0x3f]);
+            encoded[index++] = static_cast<const std::byte>(base64_chars[bit_stream & 0x3f]);
+            bit_stream       = 0;
         }
         ++counter;
         ++begin;
     }
     if (offset == 16)
     {
-        encoded.push_back(static_cast<const std::byte>(base64_chars[bit_stream >> 12 & 0x3f]));
-        encoded.push_back(static_cast<const std::byte>('='));
-        encoded.push_back(static_cast<const std::byte>('='));
+        encoded[index++] = static_cast<const std::byte>(base64_chars[bit_stream >> 12 & 0x3f]);
+        encoded[index++] = static_cast<const std::byte>('=');
+        encoded[index++] = static_cast<const std::byte>('=');
     }
     if (offset == 8)
     {
-        encoded.push_back(static_cast<const std::byte>(base64_chars[bit_stream >> 6 & 0x3f]));
-        encoded.push_back(static_cast<const std::byte>('='));
+        encoded[index++] = static_cast<const std::byte>(base64_chars[bit_stream >> 6 & 0x3f]);
+        encoded[index++] = static_cast<const std::byte>('=');
     }
+    encoded.erase(encoded.begin() + index, encoded.end());
     return encoded;
 }
 
@@ -75,9 +77,10 @@ inline OutputBuffer decode_into(std::vector<std::byte> data)
                   || std::is_same_v<value_type, std::byte>);
 
     size_t counter      = 0;
+    size_t index        = 0;
     uint32_t bit_stream = 0;
     OutputBuffer decoded;
-    decoded.reserve(std::size(data));
+    decoded.resize(std::size(data));
     for (auto c : data)
     {
         auto const num_val = base64_chars.find(static_cast<char>(c));
@@ -87,16 +90,16 @@ inline OutputBuffer decode_into(std::vector<std::byte> data)
             bit_stream += static_cast<uint32_t>(num_val) << offset;
             if (offset == 12)
             {
-                decoded.push_back(static_cast<value_type>(bit_stream >> 16 & 0xff));
+                decoded[index++] = static_cast<value_type>(bit_stream >> 16 & 0xff);
             }
             if (offset == 6)
             {
-                decoded.push_back(static_cast<value_type>(bit_stream >> 8 & 0xff));
+                decoded[index++] = static_cast<value_type>(bit_stream >> 8 & 0xff);
             }
             if (offset == 0 && counter != 4)
             {
-                decoded.push_back(static_cast<value_type>(bit_stream & 0xff));
-                bit_stream = 0;
+                decoded[index++] = static_cast<value_type>(bit_stream & 0xff);
+                bit_stream       = 0;
             }
         }
         else if (c != std::byte{'='})
@@ -105,6 +108,7 @@ inline OutputBuffer decode_into(std::vector<std::byte> data)
         }
         counter++;
     }
+    decoded.erase(decoded.begin() + index, decoded.end());
     return decoded;
 }
 
