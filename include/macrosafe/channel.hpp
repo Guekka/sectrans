@@ -7,6 +7,9 @@
 
 namespace macrosafe {
 
+constexpr auto k_default_server_port = 12345;
+constexpr auto k_default_client_port = 12346;
+
 class IChannel
 {
 public:

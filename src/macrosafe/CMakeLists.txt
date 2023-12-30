@@ -17,7 +17,6 @@ set(SOURCES
 
         ${SOURCE_DIR}/client.cpp
         ${SOURCE_DIR}/server.cpp
-        ${SOURCE_DIR}/message.cpp
         ${SOURCE_DIR}/channel.cpp
         ${SOURCE_DIR}/encrypted_channel.cpp
 )

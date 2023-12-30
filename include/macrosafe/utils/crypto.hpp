@@ -18,7 +18,8 @@ template<size_t N>
 inline void require_packet_size(const std::vector<std::byte> &data, size_t size) noexcept(false)
 {
     if (data.size() != size)
-        throw std::runtime_error("Invalid packet size");
+        throw std::runtime_error("Invalid packet size. Expected " + std::to_string(size) + ", got "
+                                 + std::to_string(data.size()));
 }
 
 class CryptoSession

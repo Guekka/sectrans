@@ -98,14 +98,24 @@ template<class... T>
     return result;
 }
 
-template<class... T>
-[[nodiscard]] auto deserialize(std::vector<std::byte> src, T &...values) noexcept -> void
+template<class T>
+[[nodiscard]] auto deserialize_advance(std::vector<std::byte> &src) noexcept -> std::decay_t<T>
 {
-    auto offset = 0;
-    ((values = deserialize<std::decay_t<decltype(values)>>(
-          std::vector<std::byte>(src.begin() + offset, src.begin() + offset + sizeof(decltype(values)))),
-      offset += sizeof(decltype(values))),
-     ...);
+    auto result = deserialize<std::decay_t<T>>(std::vector<std::byte>(src.begin(), src.begin() + sizeof(T)));
+    src.erase(src.begin(), src.begin() + sizeof(T));
+    return result;
+}
+
+template<class... T>
+[[nodiscard]] auto deserialize(std::vector<std::byte> src, T &...values) noexcept -> bool
+{
+    auto total_size = 0;
+    ((total_size += sizeof(decltype(values))), ...);
+    if (src.size() < total_size)
+        return false;
+
+    ((values = deserialize_advance<decltype(values)>(src)), ...);
+    return true;
 }
 
 } // namespace macrosafe
