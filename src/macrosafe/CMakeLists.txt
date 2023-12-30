@@ -9,6 +9,7 @@ set(SOURCES
         ${INCLUDE_DIR}/macrosafe/detail/message.hpp
 
         ${INCLUDE_DIR}/macrosafe/channel.hpp
+        ${INCLUDE_DIR}/macrosafe/encrypted_channel.hpp
 
         ${INCLUDE_DIR}/macrosafe/utils/metaprogramming.hpp
         ${INCLUDE_DIR}/macrosafe/utils/serde.hpp
@@ -18,6 +19,7 @@ set(SOURCES
         ${SOURCE_DIR}/server.cpp
         ${SOURCE_DIR}/message.cpp
         ${SOURCE_DIR}/channel.cpp
+        ${SOURCE_DIR}/encrypted_channel.cpp
 )
 
 add_library(macrosafe STATIC ${SOURCES})
@@ -27,3 +29,5 @@ target_include_directories(macrosafe
         SYSTEM PUBLIC ${INCLUDE_DIR}
         PRIVATE ${INCLUDE_DIR}
 )
+
+target_link_libraries(macrosafe PUBLIC hydrogen::hydrogen)
