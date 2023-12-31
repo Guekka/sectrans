@@ -93,9 +93,6 @@ EncryptedChannel::EncryptedChannel(ClientConfig config)
     : channel_(config.server_port, config.client_port)
     , mode_(Mode::Client)
 {
-    if (channel_.send_message(k_renegociate_message) != SendResult::Success)
-        throw std::runtime_error{"Failed to init connection."};
-    init_client();
 }
 
 void EncryptedChannel::handle_renogociate()
@@ -138,6 +135,13 @@ auto EncryptedChannel::receive_message_blocking() -> std::optional<std::vector<s
 
 auto EncryptedChannel::send_message(std::vector<std::byte> message) -> SendResult
 {
+    if (!crypto_session_)
+    {
+        if (channel_.send_message(k_renegociate_message) != SendResult::Success)
+            throw std::runtime_error{"Failed to init connection."};
+        init_client();
+    }
+
     assert_initialized();
     auto encrypted = crypto_session_->encrypt(std::move(message));
     return channel_.send_message(std::move(encrypted));

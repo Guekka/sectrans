@@ -121,41 +121,25 @@ TEST_CASE("send and receive")
 
 TEST_CASE("send and receive with encryption")
 {
-    std::optional<macrosafe::EncryptedChannel> server_channel;
-    auto server_fut = std::async(
-        std::launch::async,
-        [](std::optional<macrosafe::EncryptedChannel> &channel) {
-            try
-            {
-                channel.emplace(macrosafe::EncryptedChannel::ServerConfig{.server_port = k_server_port,
-                                                                          .client_port = k_client_port});
-            }
-            catch (const std::exception &e)
-            {
-                FAIL(e.what());
-                std::cout << "should stop here\n" << std::flush;
-                abort();
-            }
-        },
-        std::ref(server_channel));
+    auto server_channel = macrosafe::EncryptedChannel{
+        macrosafe::EncryptedChannel::ServerConfig{.server_port = k_server_port, .client_port = k_client_port}};
 
     auto client_channel = macrosafe::EncryptedChannel{
         macrosafe::EncryptedChannel::ClientConfig{.server_port = k_client_port, .client_port = k_server_port}};
-    server_fut.wait();
 
     SUBCASE("basic")
     {
+        auto message_future = server_channel.receive_message();
         REQUIRE_EQ(client_channel.send_message(as_bytes("hello")), macrosafe::SendResult::Success);
-        const auto message = server_channel->receive_message_blocking();
 
-        REQUIRE_EQ(message, std::optional<std::vector<std::byte>>{as_bytes("hello")});
+        REQUIRE_EQ(message_future.get(), std::optional<std::vector<std::byte>>{as_bytes("hello")});
     }
     SUBCASE("long")
     {
         const auto message = std::vector<std::byte>(10'000, std::byte{0x42});
 
         // we need to start receiving before sending, otherwise we will overflow the queue
-        auto received_message_future = server_channel->receive_message();
+        auto received_message_future = server_channel.receive_message();
         REQUIRE_EQ(client_channel.send_message(message), macrosafe::SendResult::Success);
 
         const auto received_message = received_message_future.get();
