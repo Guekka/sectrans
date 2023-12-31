@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstring>
 #include <optional>
+#include <span>
 #include <string>
 #include <variant>
 #include <vector>
@@ -24,7 +25,8 @@ constexpr auto k_packed_header_size = sizeof(size_t) + 3 * sizeof(uint16_t);
 
 constexpr size_t k_max_message_length = 1024;
 // account for base64 encoding
-constexpr size_t k_max_data_length    = base64::max_data_size_for_encoded_size(k_max_message_length - k_packed_header_size);
+constexpr size_t k_max_data_length = base64::max_data_size_for_encoded_size(k_max_message_length
+                                                                            - k_packed_header_size);
 
 class MessagePart
 {
@@ -50,7 +52,7 @@ public:
         return base64::to_base64(result);
     }
 
-    [[nodiscard]] static auto try_from_raw(std::vector<std::byte> raw) -> std::optional<MessagePart>
+    [[nodiscard]] static auto try_from_raw(std::span<const std::byte> raw) -> std::optional<MessagePart>
     {
         if (raw.size() < k_packed_header_size)
             return std::nullopt;
@@ -60,20 +62,20 @@ public:
 
         auto end = std::find(raw.begin(), raw.end(), std::byte{0});
         if (end != raw.end())
-            raw.erase(end, raw.end());
+            raw = raw.subspan(0, end - raw.begin());
 
-        raw = base64::from_base64(raw);
+        auto decoded = base64::from_base64(std::move(raw));
 
         Header header{};
-        deserialize(raw, header.total_size, header.part_size, header.part_count, header.part_index);
+        deserialize(decoded, header.total_size, header.part_size, header.part_count, header.part_index);
 
-        if (raw.size() < k_packed_header_size + header.part_size)
+        if (decoded.size() < k_packed_header_size + header.part_size)
             return std::nullopt;
 
-        raw.erase(raw.begin(), raw.begin() + k_packed_header_size);
-        raw.resize(header.part_size);
+        decoded.erase(decoded.begin(), decoded.begin() + k_packed_header_size);
+        decoded.resize(header.part_size);
 
-        return MessagePart{header, std::move(raw)};
+        return MessagePart{header, std::move(decoded)};
     }
 
     [[nodiscard]] auto header() const -> const Header & { return header_; }

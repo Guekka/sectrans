@@ -99,15 +99,15 @@ template<class... T>
 }
 
 template<class T>
-[[nodiscard]] auto deserialize_advance(std::vector<std::byte> &src) noexcept -> std::decay_t<T>
+[[nodiscard]] auto deserialize_advance(std::span<const std::byte> &src) noexcept -> std::decay_t<T>
 {
     auto result = deserialize<std::decay_t<T>>(std::vector<std::byte>(src.begin(), src.begin() + sizeof(T)));
-    src.erase(src.begin(), src.begin() + sizeof(T));
+    src         = src.subspan(sizeof(T));
     return result;
 }
 
 template<class... T>
-[[nodiscard]] auto deserialize(std::vector<std::byte> src, T &...values) noexcept -> bool
+[[nodiscard]] auto deserialize(std::span<const std::byte> src, T &...values) noexcept -> bool
 {
     auto total_size = 0;
     ((total_size += sizeof(decltype(values))), ...);
