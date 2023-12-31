@@ -10,36 +10,24 @@ void EncryptedChannel::init_client()
     detail::CryptoSessionHelperClient helper;
 
     auto initial_packet = helper.initial_packet();
-    std::cout << "Client sending initial packet: [";
-    for (auto byte : initial_packet)
-        std::cout << static_cast<int>(byte) << ", ";
-    std::cout << "]\n" << std::flush;
 
     if (channel_.send_message(initial_packet) != SendResult::Success)
         throw std::runtime_error{"Failed to send initial packet."};
 
-    std::cout << "Client sent initial packet\n" << std::flush;
-
     auto response = channel_.receive_message_blocking();
     if (!response)
         throw std::runtime_error{"Failed to receive initial packet."};
-
-    std::cout << "Client received initial packet\n" << std::flush;
 
     auto final_packet = helper.final_packet(response.value());
     crypto_session_   = final_packet.session;
 
     if (channel_.send_message(final_packet.packet) != SendResult::Success)
         throw std::runtime_error{"Failed to verify initial packet."};
-
-    std::cout << "Client sent final packet\n" << std::flush;
 }
 
 void EncryptedChannel::init_server()
 {
     detail::CryptoSessionHelperServer helper;
-
-    std::cout << "Server waiting for initial packet\n" << std::flush;
 
     auto initial_packet = [this] {
         while (true)
@@ -49,36 +37,20 @@ void EncryptedChannel::init_server()
                 throw std::runtime_error{"Failed to receive initial packet."};
 
             if (ret.value() == k_renegociate_message)
-            {
-                std::cout << "Server received handle_renogociate message while already renegociating. "
-                             "Ignoring.\n"
-                          << std::flush;
                 continue;
-            }
 
             return ret.value();
         }
     }();
 
-    std::cout << "Server received initial packet[";
-    for (auto byte : initial_packet)
-        std::cout << static_cast<int>(byte) << ", ";
-    std::cout << "]\n" << std::flush;
-
     auto followup = helper.process_initial(initial_packet);
-
-    std::cout << "Server sending followup packet\n" << std::flush;
 
     if (channel_.send_message(followup) != SendResult::Success)
         throw std::runtime_error{"Failed to send initial packet."};
 
-    std::cout << "Server sent initial packet\n" << std::flush;
-
     auto final_packet = channel_.receive_message_blocking();
     if (!final_packet)
         throw std::runtime_error{"Failed to receive final packet."};
-
-    std::cout << "Server received final packet\n" << std::flush;
 
     crypto_session_ = helper.process_final(final_packet.value());
 }
@@ -97,7 +69,6 @@ EncryptedChannel::EncryptedChannel(ClientConfig config)
 
 void EncryptedChannel::handle_renogociate()
 {
-    std::cout << "Renegociating connection\n" << std::flush;
     switch (mode_)
     {
         case Mode::Client: init_client(); break;
