@@ -4,6 +4,7 @@
 #define BASE_64_HPP
 
 #include <algorithm>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -64,13 +65,13 @@ inline auto encode_into(InputIterator begin, InputIterator end) -> OutputBuffer
     return encoded;
 }
 
-inline std::vector<std::byte> to_base64(std::vector<std::byte> data)
+inline std::vector<std::byte> to_base64(std::span<const std::byte> data)
 {
     return encode_into<std::vector<std::byte>>(std::begin(data), std::end(data));
 }
 
 template<class OutputBuffer>
-inline OutputBuffer decode_into(std::vector<std::byte> data)
+inline OutputBuffer decode_into(std::span<const std::byte> data)
 {
     using value_type = typename OutputBuffer::value_type;
     static_assert(std::is_same_v<value_type, char> || std::is_same_v<value_type, unsigned char>
@@ -112,7 +113,7 @@ inline OutputBuffer decode_into(std::vector<std::byte> data)
     return decoded;
 }
 
-[[nodiscard]] inline auto from_base64(const std::vector<std::byte> data)
+[[nodiscard]] inline auto from_base64(const std::span<const std::byte> data)
 {
     return decode_into<std::vector<std::byte>>(data);
 }

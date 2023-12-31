@@ -18,9 +18,9 @@ auto Channel::receive_message_blocking() -> std::optional<std::vector<std::byte>
     return server_.receive_message_blocking();
 }
 
-auto Channel::send_message(std::vector<std::byte> message) -> SendResult
+auto Channel::send_message(std::span<const std::byte> message) -> SendResult
 {
-    return client_.send_message(std::move(message));
+    return client_.send_message(message);
 }
 
 } // namespace macrosafe

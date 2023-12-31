@@ -34,7 +34,7 @@ public:
 
     CryptoSession() = default;
 
-    [[nodiscard]] auto encrypt(std::vector<std::byte> data) -> std::vector<std::byte>
+    [[nodiscard]] auto encrypt(std::span<const std::byte> data) -> std::vector<std::byte>
     {
         auto result = std::vector<uint8_t>{};
         result.resize(data.size() + hydro_secretbox_HEADERBYTES);
@@ -54,7 +54,7 @@ public:
                 reinterpret_cast<std::byte *>(result.data() + result.size())};
     }
 
-    [[nodiscard]] auto decrypt(std::vector<std::byte> data) -> std::vector<std::byte>
+    [[nodiscard]] auto decrypt(std::span<const std::byte> data) -> std::vector<std::byte>
     {
         auto result = std::vector<uint8_t>{};
         result.resize(data.size() - hydro_secretbox_HEADERBYTES);

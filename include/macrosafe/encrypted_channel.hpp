@@ -47,7 +47,7 @@ public:
     [[nodiscard]] auto receive_message_blocking() -> std::optional<std::vector<std::byte>> override;
 
     /// @copydoc Channel::send_message()
-    [[nodiscard]] auto send_message(std::vector<std::byte> message) -> SendResult override;
+    [[nodiscard]] auto send_message(std::span<const std::byte> message) -> SendResult override;
 };
 
 } // namespace macrosafe

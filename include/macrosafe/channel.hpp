@@ -25,7 +25,7 @@ public:
     /// @brief Sends a message to the server.
     /// @param message The message to send.
     /// @return SendResult::Success if successful, otherwise SendResult::Failure.
-    [[nodiscard]] virtual auto send_message(std::vector<std::byte> message) -> SendResult = 0;
+    [[nodiscard]] virtual auto send_message(std::span<const std::byte> message) -> SendResult = 0;
 };
 
 class Channel final : public IChannel
@@ -43,7 +43,7 @@ public:
     [[nodiscard]] auto receive_message_blocking() -> std::optional<std::vector<std::byte>> override;
 
     /// @copydoc IChannel::send_message()
-    [[nodiscard]] auto send_message(std::vector<std::byte> message) -> SendResult override;
+    [[nodiscard]] auto send_message(std::span<const std::byte> message) -> SendResult override;
 };
 
 } // namespace macrosafe

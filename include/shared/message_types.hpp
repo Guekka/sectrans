@@ -32,6 +32,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ListRequest, dummy)
 struct Request
 {
     std::variant<UploadRequest, DownloadRequest, ListRequest> data;
+    std::string uuid;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, data)

@@ -104,7 +104,7 @@ auto EncryptedChannel::receive_message_blocking() -> std::optional<std::vector<s
     return crypto_session_->decrypt(message.value());
 }
 
-auto EncryptedChannel::send_message(std::vector<std::byte> message) -> SendResult
+auto EncryptedChannel::send_message(std::span<const std::byte> message) -> SendResult
 {
     if (!crypto_session_)
     {
@@ -114,7 +114,7 @@ auto EncryptedChannel::send_message(std::vector<std::byte> message) -> SendResul
     }
 
     assert_initialized();
-    auto encrypted = crypto_session_->encrypt(std::move(message));
+    auto encrypted = crypto_session_->encrypt(message);
     return channel_.send_message(std::move(encrypted));
 }
 

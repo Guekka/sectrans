@@ -24,10 +24,8 @@ class Client
 
     [[nodiscard]] auto send_raw_message(std::vector<std::byte> message) -> SendResult;
 
-    [[nodiscard]] auto send_message(const detail::MessagePart &message) -> SendResult;
-
 public:
-    [[nodiscard]] auto send_message(std::vector<std::byte> message) -> SendResult;
+    [[nodiscard]] auto send_message(std::span<const std::byte> message) -> SendResult;
     Client(uint16_t port);
 };
 

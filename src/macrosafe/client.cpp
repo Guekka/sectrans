@@ -21,7 +21,7 @@ auto Client::send_raw_message(std::vector<std::byte> message) -> SendResult
     return lib_.execute<k_send_message_func>(as_char, port_) == 0 ? SendResult::Success : SendResult::Failure;
 }
 
-auto Client::send_message(std::vector<std::byte> message) -> SendResult
+auto Client::send_message(std::span<const std::byte> message) -> SendResult
 {
     const size_t computed_part_count = message.size() / k_max_data_length
                                        + (message.size() % k_max_data_length != 0 ? 1 : 0);
@@ -48,11 +48,6 @@ auto Client::send_message(std::vector<std::byte> message) -> SendResult
             return result;
     }
     return SendResult::Success;
-}
-
-auto Client::send_message(const MessagePart &message) -> SendResult
-{
-    return send_raw_message(message.to_raw());
 }
 
 } // namespace macrosafe::detail
