@@ -2,6 +2,7 @@
 #include <macrosafe/encrypted_channel.hpp>
 #include <macrosafe/utils/metaprogramming.hpp>
 #include <shared/message_types.hpp>
+#include <termios.h>
 
 #include <cassert>
 #include <filesystem>
@@ -31,6 +32,12 @@ struct ParsedArgs
     };
 
     std::variant<Transfer, List> mode;
+};
+
+struct User
+{
+    std::string username;
+    std::string password;
 };
 
 /*
@@ -102,7 +109,7 @@ struct ParsedArgs
     return std::visit(macrosafe::Overload{valid_transfer, [](ParsedArgs::List) { return true; }}, args.mode);
 }
 
-[[nodiscard]] auto run_upload(const std::filesystem::path &path, Channel &channel) -> bool
+[[nodiscard]] auto run_upload(const std::filesystem::path &path, Channel &channel, const User &user) -> bool
 {
     auto file = std::ifstream(path, std::ios::binary | std::ios::ate);
     if (!file)
@@ -117,7 +124,9 @@ struct ParsedArgs
     if (file.gcount() != size)
         return false;
 
-    auto message = Request{.data = UploadRequest{.path = path, .data = content}};
+    auto message = Request{.data     = UploadRequest{.path = path, .data = content},
+                           .username = user.username,
+                           .password = user.password};
     if (channel.send_message(serialize(message)) != macrosafe::SendResult::Success)
         return false;
 
@@ -136,9 +145,11 @@ struct ParsedArgs
                       parsed_response.value().data);
 }
 
-[[nodiscard]] auto run_download(const std::filesystem::path &path, Channel &channel) -> bool
+[[nodiscard]] auto run_download(const std::filesystem::path &path, Channel &channel, const User &user) -> bool
 {
-    const auto message = Request{.data = DownloadRequest{.path = path}};
+    const auto message = Request{.data     = DownloadRequest{.path = path},
+                                 .username = user.username,
+                                 .password = user.password};
     if (channel.send_message(serialize(message)) != macrosafe::SendResult::Success)
         return false;
 
@@ -150,33 +161,34 @@ struct ParsedArgs
     if (!parsed_response)
         return false;
 
-    const auto &download_response = std::get<DownloadResponse>(parsed_response.value().data);
-    if (!download_response.data)
+    const auto *download_response = std::get_if<DownloadResponse>(&parsed_response.value().data);
+    if (download_response == nullptr || download_response->data->empty())
         return false;
 
     auto file = std::ofstream(path, std::ios::binary | std::ios::trunc);
     if (!file)
         return false;
 
-    file.write(reinterpret_cast<const char *>(download_response.data->data()),
-               static_cast<std::streamsize>(download_response.data->size()));
+    file.write(reinterpret_cast<const char *>(download_response->data->data()),
+               static_cast<std::streamsize>(download_response->data->size()));
 
     return static_cast<bool>(file);
 }
 
-[[nodiscard]] auto run_transfer(const ParsedArgs::Transfer &transfer, Channel &channel) -> bool
+[[nodiscard]] auto run_transfer(const ParsedArgs::Transfer &transfer, Channel &channel, const User &user)
+    -> bool
 {
     switch (transfer.type)
     {
-        case ParsedArgs::Transfer::Mode::Download: return run_download(transfer.path, channel);
-        case ParsedArgs::Transfer::Mode::Upload: return run_upload(transfer.path, channel);
+        case ParsedArgs::Transfer::Mode::Download: return run_download(transfer.path, channel, user);
+        case ParsedArgs::Transfer::Mode::Upload: return run_upload(transfer.path, channel, user);
         default: throw std::runtime_error("Invalid transfer mode");
     }
 }
 
-[[nodiscard]] auto run_list(ParsedArgs::List, Channel &channel) -> bool
+[[nodiscard]] auto run_list(ParsedArgs::List, Channel &channel, const User &user) -> bool
 {
-    auto message = Request{.data = ListRequest{}};
+    auto message = Request{.data = ListRequest{}, .username = user.username, .password = user.password};
     if (channel.send_message(serialize(message)) != macrosafe::SendResult::Success)
         return false;
 
@@ -188,30 +200,76 @@ struct ParsedArgs
     if (!parsed_response)
         return false;
 
-    const auto &list_response = std::get<ListResponse>(parsed_response.value().data);
-    if (!list_response.files)
+    const auto &list_response = std::get_if<ListResponse>(&parsed_response.value().data);
+    if (list_response == nullptr || list_response->files->empty())
         return false;
 
-    for (const auto &file : list_response.files.value())
+    for (const auto &file : list_response->files.value())
         std::cout << file << '\n';
 
     return true;
 }
 
-[[nodiscard]] auto run(const ParsedArgs &args) -> bool
+[[nodiscard]] auto run(const ParsedArgs &args, const User &user) -> bool
 {
     auto channel = Channel{Channel::ClientConfig{
         .server_port = macrosafe::k_default_client_port,
         .client_port = macrosafe::k_default_server_port,
     }};
 
-    return std::visit(macrosafe::Overload{[&channel](const ParsedArgs::Transfer &transfer) {
-                                              return run_transfer(transfer, channel);
+    return std::visit(macrosafe::Overload{[&channel, user](const ParsedArgs::Transfer &transfer) {
+                                              return run_transfer(transfer, channel, user);
                                           },
-                                          [&channel](const ParsedArgs::List &list) {
-                                              return run_list(list, channel);
+                                          [&channel, user](const ParsedArgs::List &list) {
+                                              return run_list(list, channel, user);
                                           }},
                       args.mode);
+}
+
+class StdinHiddenMode
+{
+public:
+    StdinHiddenMode()
+    {
+        termios tty{};
+        tcgetattr(STDIN_FILENO, &tty);
+
+        tty.c_lflag &= static_cast<tcflag_t>(~ECHO);
+
+        tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+    }
+
+    StdinHiddenMode(const StdinHiddenMode &) = delete;
+    StdinHiddenMode(StdinHiddenMode &&)      = delete;
+
+    auto operator=(const StdinHiddenMode &) -> StdinHiddenMode & = delete;
+    auto operator=(StdinHiddenMode &&) -> StdinHiddenMode      & = delete;
+
+    ~StdinHiddenMode()
+    {
+        termios tty{};
+        tcgetattr(STDIN_FILENO, &tty);
+
+        tty.c_lflag |= ECHO;
+
+        tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+    }
+};
+
+[[nodiscard]] auto prompt_user() -> User
+{
+    std::cout << "Username: " << std::flush;
+    auto username = std::string{};
+    std::getline(std::cin, username);
+
+    std::cout << "Password: " << std::flush;
+    auto password = std::string{};
+    {
+        StdinHiddenMode mode{};
+        std::getline(std::cin, password);
+    }
+
+    return User{std::move(username), std::move(password)};
 }
 
 auto main(int argc, char **argv) -> int
@@ -233,7 +291,10 @@ auto main(int argc, char **argv) -> int
             return 2;
         }
 
-        if (!run(args))
+        auto user = prompt_user();
+        std::cout << "Running command\n" << std::flush;
+
+        if (!run(args, user))
         {
             std::cerr << "Error running command\n";
             return 3;

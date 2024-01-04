@@ -1,8 +1,10 @@
 set(ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(INCLUDE_DIR ${ROOT_DIR}/include)
 
 set(SOURCES
+        ${SOURCE_DIR}/auth.hpp
+        ${SOURCE_DIR}/auth.cpp
+
         ${SOURCE_DIR}/main.cpp
 )
 
