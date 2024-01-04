@@ -1,3 +1,5 @@
+#pragma once
+
 #include "hydrogen.h"
 
 #include <algorithm>
@@ -5,7 +7,8 @@
 #include <stdexcept>
 #include <vector>
 
-namespace macrosafe::detail {
+namespace macrosafe {
+namespace detail {
 
 template<size_t N>
 [[nodiscard]] auto from_u8(const std::array<uint8_t, N> &arr) -> std::vector<std::byte>
@@ -168,4 +171,49 @@ public:
     }
 };
 
-} // namespace macrosafe::detail
+} // namespace detail
+
+class PasswordHasher
+{
+    std::array<uint8_t, hydro_pwhash_MASTERKEYBYTES> master_key_{};
+
+    constexpr static auto k_ops_limit = 10000;
+    constexpr static auto k_mem_limit = 0;
+    constexpr static auto k_threads   = 4;
+
+public:
+    PasswordHasher()
+    {
+        if (hydro_init() != 0)
+            throw std::runtime_error("hydro_init() failed");
+
+        hydro_pwhash_keygen(master_key_.data());
+    }
+
+    [[nodiscard]] auto hash(std::string data) const -> std::vector<std::byte>
+    {
+        auto result = std::array<uint8_t, hydro_pwhash_STOREDBYTES>{};
+        hydro_pwhash_create(result.data(),
+                            data.data(),
+                            data.length(),
+                            master_key_.data(),
+                            k_ops_limit,
+                            k_mem_limit,
+                            k_threads);
+
+        return detail::from_u8(result);
+    }
+
+    [[nodiscard]] auto verify(std::string data, std::span<const std::byte> hash) const -> bool
+    {
+        return hydro_pwhash_verify(reinterpret_cast<const uint8_t *>(hash.data()),
+                                   data.data(),
+                                   data.length(),
+                                   master_key_.data(),
+                                   k_ops_limit,
+                                   k_mem_limit,
+                                   k_threads)
+               == 0;
+    }
+};
+} // namespace macrosafe

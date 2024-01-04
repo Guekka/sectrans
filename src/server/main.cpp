@@ -1,3 +1,5 @@
+#include "auth.hpp"
+
 #include <macrosafe/encrypted_channel.hpp>
 #include <shared/message_types.hpp>
 
@@ -10,6 +12,11 @@ struct Files
 };
 
 static inline Files files;
+
+static inline Auth auth{{
+    // This is obviously not secure. This is just for the proof of concept.
+    User{.username = "user1", .password = Password{"password1"}},
+}};
 
 [[nodiscard]] auto handle_upload_request(Channel &channel, const UploadRequest &request) -> bool
 {
@@ -65,16 +72,33 @@ static inline Files files;
                       },
                       request.data);
 }
+auto send_generic_error(Channel &channel, std::string error = "Generic error") -> bool
+{
+    auto response = Response{.data = GenericError{.message = std::move(error)}};
+    return channel.send_message(serialize(response)) == macrosafe::SendResult::Success;
+}
 
 [[nodiscard]] auto receive_message(Channel &channel) -> bool
 {
     const auto message = channel.receive_message_blocking();
     if (!message)
+    {
+        send_generic_error(channel, "Failed to receive message");
         return false;
+    }
 
     const auto parsed_message = deserialize<Request>(message.value());
     if (!parsed_message)
+    {
+        send_generic_error(channel, "Failed to parse message");
         return false;
+    }
+
+    if (!auth.check(parsed_message.value().username, parsed_message.value().password))
+    {
+        send_generic_error(channel, "Invalid credentials");
+        return false;
+    }
 
     return handle_message(channel, parsed_message.value());
 }

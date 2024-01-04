@@ -32,9 +32,11 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ListRequest, dummy)
 struct Request
 {
     std::variant<UploadRequest, DownloadRequest, ListRequest> data;
+    std::string username;
+    std::string password;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, data)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Request, data, username, password)
 
 struct UploadResponse
 {
@@ -57,9 +59,16 @@ struct ListResponse
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ListResponse, files)
 
+struct GenericError
+{
+    std::string message;
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(GenericError, message)
+
 struct Response
 {
-    std::variant<UploadResponse, DownloadResponse, ListResponse> data;
+    std::variant<UploadResponse, DownloadResponse, ListResponse, GenericError> data;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Response, data)
