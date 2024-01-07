@@ -36,4 +36,6 @@ The client (on the same machine) will then connect automatically. Available comm
 
 The client binary is available at `build/src/client/cybersec_project_client`.
 
+The user is hardcoded and is `user1`. The password is `password1`.
+
 **Ports 12345 and 12346 are expected to be available**.

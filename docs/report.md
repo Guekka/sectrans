@@ -27,8 +27,7 @@ There are several obvious vulnerabilities in macrohard:
     read(new_socket, message_buffer, message_size);
 ```
 
-At this point in the code, the server just read the size of the message. It then reads the message itself, without
-checking if the size is valid. This can lead to a buffer overflow.
+At this point in the code, the server just read the size of the message. It then reads the message itself, without checking if the size is valid. This can lead to a buffer overflow.
 
 In theory, the client will always send a valid size, but a malicious client could send an invalid size.
 
@@ -77,6 +76,8 @@ SecTrans provides a basic authentication mecanism: the client provides its usern
 The username and password are sent in clear text, but the message is encrypted, so it is not a problem.
 
 The password is hashed with libhydrogen's `hydro_pwhash` function.
+
+For this prototype, the username and password are hardcoded in the server. Obviously, this is not secure, but it is only a prototype. With a bit more time, we would have used a proper database.
 
 ### Denial of service
 
